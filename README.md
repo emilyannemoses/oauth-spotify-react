@@ -1,4 +1,4 @@
-# Spotify Client Side API with ReactJS
+# Spotify Client Side OAuth API with ReactJS
 
 * This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
 
