@@ -1,106 +1,75 @@
-import React, {Component} from 'react';
-import logo from './logo.svg';
-import './App.css';
+import React, { Component } from "react";
+import { authEndpoint, clientId, redirectUri, scopes } from "./config";
+import hash from "./hash";
+import logo from "./logo.svg";
+import "./App.css";
 
 class App extends Component {
-  constructor(props) {
-    super(props);
+  constructor() {
+    super();
     this.state = {
-      isLoggedIn: false
-    }
-    this.stateKey = 'spotify_auth_state';
-    this.spotifyParams = this.getHashParams();
-    this.access_token = this.spotifyParams.access_token;
-    this.spotifyState = this.spotifyParams.spotifyState;
-    this.storedState = localStorage.getItem(this.stateKey);
+      user: [],
+      token: null,
+      is_playing: "Paused",
+    };
   }
-  beginAuth() {
-    if (this.access_token && (this.spotifyState == null || this.spotifyState !== this.storedState)) {
-      alert('There was an error during the authentication');
-    } else {
-      localStorage.removeItem(this.stateKey);
-      if (this.access_token) {
-        fetch('https://api.spotify.com/v1/me', {
-          headers: {
-            'Authorization': 'Bearer ' + this.access_token
-          },
-        })
-        .then( response => {
-          response.json()
-        })
-        .then( data => {
-          console.log(data)
-        })
-        .catch( error => console.log("oops, looks like we got an error: ", error))
+  componentDidMount() {
+    let _token = hash.access_token
+    if (_token) {
+      this.setState({
+        token: _token
+      });
+      this.getUserInfo(_token);
+    }
+  }
+  getUserInfo = (token) => {
+    fetch('https://api.spotify.com/v1/me/', {
+    headers: {
+      'Authorization': 'Bearer ' + token
+    },
+  })
+    .then(response => response.json())
+    .then(data =>
+    (
+      {
+        name: `${data.display_name}`,
+        username: `${data.id}`,
+        email: `${data.email}`,
+        location: `${data.country}`
       }
-      this.logIn()
-    }
-  }
-  logIn = () => {
-    const client_id = '279710054a5e456ca6a80d4561e56868';
-    const redirect_uri = 'http://localhost:3000/callback';
-    const spotifyState = this.generateRandomString(16);
-    localStorage.setItem(this.stateKey, spotifyState);
-    const scope = 'user-read-private user-read-email';
-    let url = 'https://accounts.spotify.com/authorize';
-    url += '?response_type=token';
-    url += '&client_id=' + encodeURIComponent(client_id);
-    url += '&scope=' + encodeURIComponent(scope);
-    url += '&redirect_uri=' + encodeURIComponent(redirect_uri);
-    url += '&state=' + encodeURIComponent(spotifyState);
-    window.location = url;
-  }
-  generateRandomString = (length) => {
-    let text = '';
-    const possible = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-    for (let i = 0; i < length; i++) {
-      text += possible.charAt(Math.floor(Math.random() * possible.length));
-    }
-    return text;
-  }
-  getHashParams() {
-    // const href = window.location.href;
-    // const pars = href.split('?')[1];
-    // // Be sure url params exist
-    // // if (params && params !== '') {
-    //     const result = pars.split('&').reduce(function (res, item) {
-    //         const parts = item.split('=');
-    //         res[parts[0]] = parts[1];
-    //         return res;
-    //     }, {});
-    // }
-    // let hashParams = {};
-    // let e, r = /([^&;=]+)=?([^&;]*)/g,
-    //     q = window.location.hash.substring(1);
-    // while (!!(e === r.exec(q))) {
-    //    hashParams[e[1]] = decodeURIComponent(e[2]);
-    // }
-    // console.log(hashParams)
-    // return hashParams;
+    )
+    )
+    .then(user => this.setState({
+      user,
+      is_playing: "Paused"
+    })
+    )
+    .catch(error=>console.log("There as an error", error))
   }
   render() {
-    const isLoggedIn = this.state.isLoggedIn;
+    const {user, is_playing} = this.state;
+    const {username, name, email, location} = user;
     return (
       <div className="App">
         <header className="App-header">
           <img src={logo} className="App-logo" alt="logo" />
-          { isLoggedIn ? (
-            <div>
-              <div>You are logged in</div>
+          { this.state.token ? (
+            <div className="user-details">
+              User's name:{name} <br></br>
+              Spotify username:{username}<br></br>
+              Email:{email}<br></br>
+              Location:{location}<br></br>
+              Playing or paused:{is_playing}
             </div>
           ) : (
-            <div>
-              <p>
-                Log in to your Spotify account to listen to songs!
-              </p>
-              <div
-                className="App-link"
-                onClick={this.beginAuth}
-              >
-                Log in
-              </div>
-            </div>
-          )}
+            <a
+              className="btn btn--loginApp-link"
+              href={`${authEndpoint}?client_id=${clientId}&redirect_uri=${redirectUri}&scope=${scopes.join("%20")}&response_type=token&show_dialog=true`}
+            >
+              Log in
+            </a>
+            )
+          }
         </header>
       </div>
     );
