@@ -77,7 +77,6 @@ class App extends Component {
     // Ready
     this.player.on('ready', async data => {
       let { device_id } = data;
-      console.log("Let the music play on!");
       // set the deviceId variable, then let's try
       // to swap music playback to *our* player!
       await this.setState({ deviceId: device_id });
@@ -94,7 +93,7 @@ class App extends Component {
       clearInterval(this.playerCheckInterval);
       // create a new player
       this.player = new window.Spotify.Player({
-        name: "Matt's Spotify Player",
+        name: "Emily's Spotify Player",
         getOAuthToken: cb => { cb(token); },
       });
       // set up the player's event handlers
